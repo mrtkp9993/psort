@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>psort — pixel sorter</title>
+  <link rel="icon" href="/icon.png" />
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #030511; --panel: #070a18; --raised: #11162a; --active: #171a35;
+      --line: #202640; --line2: #34406d;
+      --ink: #c9d5ec; --ink-bright: #f5f3ee; --muted: #7885a7;
+      --accent: #1a50ef; --accent-dim: #98d2fc; --accent-solid: #673fef;
+      --hot: #f93fb4; --ember: #fc835f; --gold: #fcc353;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font: 13px/1.45 "Segoe UI", system-ui, sans-serif; background: var(--bg); color: var(--ink);
+           display: grid; grid-template-columns: 208px 1fr 168px; grid-template-rows: auto 1fr auto; height: 100vh; overflow: hidden; }
+    #top { grid-column: 1 / -1; display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; height: 48px; padding: 0 16px;
+           background:
+             linear-gradient(90deg, rgba(26,80,239,.16), transparent 38%),
+             radial-gradient(42rem 10rem at 72% 100%, rgba(249,63,180,.26), transparent 62%),
+             radial-gradient(22rem 9rem at 84% 120%, rgba(252,195,83,.22), transparent 60%),
+             var(--panel);
+           border-bottom: 1px solid color-mix(in srgb, var(--accent) 44%, var(--line));
+           box-shadow: inset 0 -1px 0 rgba(245,243,238,.05), 0 10px 34px rgba(3,5,17,.42); }
+    #top .brand-icon { display: block; width: 24px; height: 24px; object-fit: contain; flex-shrink: 0; }
+    #top h1 { font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif; font-size: 15px; font-weight: 400;
+              color: var(--ink-bright); letter-spacing: .14em; text-transform: uppercase; margin: 0; overflow-wrap: anywhere; }
+    #top .sub { color: var(--muted); font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; }
+    .side-title { font-size: 15px; font-weight: 400; color: var(--ink-bright); letter-spacing: .14em;
+                  text-transform: uppercase; margin: 0 0 12px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+    #panel { padding: 12px 11px; overflow: hidden; min-width: 0; border-right: 1px solid var(--line); background: var(--panel); }
+    #rightpanel { padding: 12px 11px; overflow: hidden; min-width: 0; border-left: 1px solid var(--line); background: var(--panel); }
+    #panel::-webkit-scrollbar, #rightpanel::-webkit-scrollbar { width: 10px; }
+    #panel::-webkit-scrollbar-thumb, #rightpanel::-webkit-scrollbar-thumb { background: var(--line2); }
+    #panel::-webkit-scrollbar-track, #rightpanel::-webkit-scrollbar-track { background: var(--panel); }
+    #rightpanel h2 { font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif; font-weight: 400; color: var(--ink-bright);
+                letter-spacing: .2em; text-transform: uppercase; margin: 0 0 12px; padding-bottom: 10px;
+                border-bottom: 1px solid var(--line); font-size: 15px; }
+    label { display: block; margin: 9px 0 3px; color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: .1em; }
+    .val { float: right; color: var(--ink-bright); text-transform: none; letter-spacing: 0; font-size: 11px; }
+    input[type=range] { width: 100%; accent-color: var(--accent); }
+    input[type=number] { width: 100%; padding: 6px; background: var(--raised); color: var(--ink-bright);
+                         border: 1px solid var(--line); border-radius: 0; font-size: 12px; }
+    select { width: 100%; padding: 6px; background: var(--raised); color: var(--ink-bright);
+             border: 1px solid var(--line); border-radius: 0; font-size: 12px; }
+    select:focus, input:focus { outline: none; border-color: var(--accent); }
+    input[type=checkbox] { accent-color: var(--accent); }
+    button { width: 100%; padding: 6px 7px; margin-top: 5px; cursor: pointer; border-radius: 0;
+             background: transparent; color: var(--accent-dim); border: 1px solid var(--line2);
+             font-size: 10px; text-transform: uppercase; letter-spacing: .06em; transition: all .12s ease;
+             white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    button:hover { border-color: var(--accent); color: var(--accent); background: var(--raised); }
+    button.primary { background: var(--accent-solid); color: var(--bg); border-color: var(--accent-solid); font-weight: 600; }
+    button.primary:hover { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+    .row { display: flex; gap: 6px; }
+    .row > * { flex: 1; }
+    .hidden { display: none; }
+    hr { border: none; border-top: 1px solid var(--line); margin: 11px 0; }
+    .chk { display: flex; align-items: center; gap: 7px; margin-top: 11px; color: var(--ink); font-size: 12px; }
+    .chk input { width: auto; }
+    #passes { margin: 4px 0; }
+    .pass { display: flex; align-items: center; gap: 4px; padding: 6px 8px; margin: 3px 0; border: 1px solid var(--line);
+            background: var(--raised); cursor: pointer; font-size: 11px; color: var(--ink); letter-spacing: .02em; }
+    .pass:hover { border-color: var(--line2); }
+    .pass.active { border-color: var(--accent); background: var(--active); color: var(--ink-bright); box-shadow: inset 2px 0 0 var(--accent); }
+    .pass .label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .pass .mini { width: 22px; padding: 3px; margin: 0; flex: none; font-size: 11px; }
+    #stage { display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative;
+             background: radial-gradient(120% 120% at 50% 0%, #14161f 0%, var(--bg) 70%); }
+    #canvas { max-width: 100%; max-height: 100%; image-rendering: pixelated;
+              border: 1px solid var(--line2); box-shadow: 0 0 0 1px #000, 0 14px 50px rgba(0,0,0,.65), 0 0 70px rgba(26,80,239,.12); }
+    #drop { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; color: var(--accent);
+            background: rgba(26,80,239,.14); font: 400 18px/1 Georgia, serif; letter-spacing: .12em; text-transform: uppercase;
+            border: 2px dashed var(--accent); pointer-events: none; }
+    #stage.over #drop { display: flex; }
+    #exportbar { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%);
+                 width: min(340px, calc(100% - 32px)); padding: 11px 13px; background: var(--panel);
+                 border: 1px solid var(--line2); box-shadow: 0 12px 34px rgba(3,5,17,.6); z-index: 5; }
+    #exportbar label { display: flex; align-items: center; justify-content: space-between; gap: 6px; min-width: 0; }
+    #exportbar .export-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    #exportbar .val { float: none; flex-shrink: 0; }
+    #cancelExport { padding-inline: 4px; font-size: 9.5px; letter-spacing: .04em; }
+    progress { width: 100%; height: 8px; accent-color: var(--accent); }
+    progress::-webkit-progress-bar { background: var(--raised); }
+    progress::-webkit-progress-value { background: var(--accent); }
+    #footer { grid-column: 1 / -1; display: flex; align-items: center; justify-content: center; gap: 16px;
+              min-height: 26px; padding: 4px 16px; background: var(--panel); border-top: 1px solid var(--line);
+              color: var(--muted); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; }
+    #footer .mark { color: var(--ink-bright); text-decoration: none; }
+    #footer .mark:hover { color: var(--accent-dim); }
+    #footer .accent { color: var(--accent-dim); }
+    @media (max-width: 720px) {
+      #top { align-items: center; height: auto; min-height: 56px; padding-block: 10px; }
+      #top .sub { flex-basis: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <header id="top">
+    <img class="brand-icon" src="/icon.png" alt="psort icon" />
+    <h1>psort</h1>
+    <span class="sub">pixel sorter</span>
+  </header>
+
+  <div id="panel">
+    <h2 class="side-title">Controls</h2>
+
+    <label>angle <span class="val" id="angleVal">0°</span></label>
+    <input type="range" id="angle" min="0" max="360" step="1" value="0" />
+    <div class="row">
+      <button data-angle="0">horizontal</button>
+      <button data-angle="90">vertical</button>
+    </div>
+
+    <label>sort key</label>
+    <select id="key">
+      <option value="lightness">lightness</option>
+      <option value="hue">hue</option>
+      <option value="saturation">saturation</option>
+      <option value="intensity">intensity</option>
+      <option value="r">red</option>
+      <option value="g">green</option>
+      <option value="b">blue</option>
+    </select>
+
+    <label>order</label>
+    <select id="order">
+      <option value="asc">ascending</option>
+      <option value="desc">descending</option>
+    </select>
+
+    <label>method</label>
+    <select id="method">
+      <option value="threshold">threshold</option>
+      <option value="full">full line</option>
+      <option value="random">random</option>
+      <option value="wave">wave</option>
+      <option value="fixed">fixed chunk</option>
+      <option value="edge">edge (sobel)</option>
+    </select>
+
+    <div id="g-lo">
+      <label>threshold low <span class="val" id="loVal">64</span></label>
+      <input type="range" id="lo" min="0" max="255" step="1" value="64" />
+    </div>
+    <div id="g-hi">
+      <label>threshold high <span class="val" id="hiVal">204</span></label>
+      <input type="range" id="hi" min="0" max="255" step="1" value="204" />
+    </div>
+    <div id="g-invert" class="chk"><input type="checkbox" id="invert" /><label style="margin:0">sort outside band (invert)</label></div>
+    <div id="g-clength">
+      <label>chunk length <span class="val" id="clengthVal">50</span></label>
+      <input type="range" id="clength" min="1" max="300" step="1" value="50" />
+    </div>
+
+    <label>min length <span class="val" id="minLenVal">0</span></label>
+    <input type="range" id="minLen" min="0" max="200" step="1" value="0" />
+    <label>max length <span class="val" id="maxLenVal">0</span> <span style="color:#666">(0 = off)</span></label>
+    <input type="range" id="maxLen" min="0" max="600" step="1" value="0" />
+
+    <label>intensity <span class="val" id="intensityVal">1.00</span></label>
+    <input type="range" id="intensity" min="0" max="1" step="0.01" value="1" />
+
+    <hr />
+
+    <label>seed</label>
+    <div class="row">
+      <input type="number" id="seed" value="1" min="0" step="1" />
+      <button id="randomize" style="flex:0 0 auto; width:auto; margin:0;">🎲</button>
+    </div>
+    <div class="chk"><input type="checkbox" id="overlay" /><label style="margin:0">interval overlay</label></div>
+
+    <hr />
+
+    <button id="load">load image…</button>
+    <input type="file" id="file" accept="image/*" hidden />
+    <button id="export" class="primary">export PNG</button>
+    <button id="reset">reset</button>
+  </div>
+
+  <div id="stage">
+    <canvas id="canvas"></canvas>
+    <div id="drop">drop image</div>
+    <div id="exportbar" class="hidden">
+      <label><span class="export-label">exporting…</span> <span class="val" id="exportPct">0%</span></label>
+      <progress id="exportProgress" value="0" max="1"></progress>
+      <button id="cancelExport">cancel</button>
+    </div>
+  </div>
+
+  <div id="rightpanel">
+    <h2>Passes</h2>
+    <div id="passes"></div>
+    <div class="row">
+      <button id="addPass">+ pass</button>
+      <button id="asendorf">Asendorf preset</button>
+    </div>
+  </div>
+
+  <footer id="footer">
+    <a class="mark" href="https://muratkoptur.com" target="_blank" rel="noopener">© 2026 Murat Koptur</a>
+  </footer>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
